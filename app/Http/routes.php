@@ -16,20 +16,18 @@ Route::get('/', function () {
 });
 
 Route::get('github', function() {
+    //
+    $client = new \GuzzleHttp\Client(['headers' => ['Authorization' => 'Basic bXJhYmJhbmk6d2VkZXZzMTIz']]);
 
-//    dispatch(new \App\Jobs\StargazerCollector());
-    $client = new \GuzzleHttp\Client();
-    $res = $client->request('GET', 'https://api.github.com/user', [
-        'auth' => ['mrabbani', 'wedevs123']
-    ]);
-    $page  = 1;
+    $page = 70;
     $totalUsers = 0;
+    while ($page < 74) {
+        $res = $client->request('GET', 'https://api.github.com/repos/WordPress/WordPress/stargazers?per_page=100&page=' . $page);
+        $result = json_decode($res->getBody()->getContents(), true);
+        \App\User::find(1)->githubUsers()->createMany($result);
+        $totalUsers += count($result);
+        $page++;
+    }
 
-    $res = $client->request('GET', 'https://api.github.com/repos/WordPress/WordPress/stargazers?page=' . $page . '&per_page=1000', ['page=3']);
-
-    $result = json_decode( $res->getBody()->getContents(), true);
-    \App\User::find(1)->githubUsers()->createMany($result);
-    $totalUsers += count($result);
-    $page++;
-    return 'working';
+    return $page;
 });
