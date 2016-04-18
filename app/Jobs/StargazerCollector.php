@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Jobs\Job;
+use App\StargazerRepository;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -11,14 +12,19 @@ class StargazerCollector extends Job implements ShouldQueue
 {
     use InteractsWithQueue, SerializesModels;
 
+    private $repository;
+    private $token;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct($repo, $token)
     {
         //
+        $this->repository = $repo;
+        $this->token = $token;
     }
 
     /**
@@ -29,19 +35,20 @@ class StargazerCollector extends Job implements ShouldQueue
     public function handle()
     {
         //
-
-        $client = new \GuzzleHttp\Client();
-        $res = $client->request('GET', 'https://api.github.com/user', [
-            'auth' => ['mrabbani', 'wedevs123']
-        ]);
-        return $res->getBody();
-        $page  = 1;
-        $totalUsers = 0;
-
-            $res = $client->request('GET', 'https://api.github.com/repos/WordPress/WordPress/stargazers?page=' . $page . '&per_page=1000', ['mrabbani', 'wedevs123']);
-            $result = json_decode( $res->getBody()->getContents(), true);
-            \App\User::find(1)->githubUsers()->createMany($result);
-            $totalUsers += count($result);
+        $client = new \GuzzleHttp\Client(['headers' => ['Authorization' => 'Basic ' . $this->token]]);
+        $page = 1;
+        while ($page < 2) {
+            $res = $client->request('GET', 'https://api.github.com/repos/' . $this->repository . '/stargazers?page=' . $page . '&per_page=100', []);
+            $result = json_decode($res->getBody()->getContents(), true);
+            if(count($result)<1) {
+                break;
+            }
+            StargazerRepository::where('name', $this->repository)
+                ->first()
+                ->githubUsers()
+                ->createMany($result);
             $page++;
+        }
+
     }
 }

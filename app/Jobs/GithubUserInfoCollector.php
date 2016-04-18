@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Jobs\Job;
+use App\StargazerRepository;
 use GuzzleHttp\Client;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -17,9 +18,13 @@ class GithubUserInfoCollector extends Job implements ShouldQueue
      *
      * @return void
      */
-    public function __construct()
+    private  $githubUsers;
+    private  $repository;
+    public function __construct($users, StargazerRepository $repository)
     {
         //
+        $this->githubUsers = $users;
+        $this->repository =  $repository;
     }
 
     /**
@@ -30,17 +35,12 @@ class GithubUserInfoCollector extends Job implements ShouldQueue
     public function handle()
     {
         //
-        $client = new Client();
-        $page  = 1;
-        $totalUsers = 0;
-        while($totalUsers>7270) {
-            $res = $client->request('GET', 'https://api.github.com/repos/WordPress/WordPress/stargazers?page=' . $page, ['page=3']);
+        $client = new \GuzzleHttp\Client(['headers' => ['Authorization' => 'Basic ' . $this->repository->token]]);
 
-            $result = json_decode( $res->getBody()->getContents(), true);
-            \App\User::find(1)->githubUsers()->createMany($result);
-            $totalUsers += count($result);
-            $page++;
+        foreach ($this->githubUsers as $user) {
+            $res = $client->request('GET', 'https://api.github.com/users/' . $user);
+            $result = json_decode($res->getBody()->getContents(), true);
+            $this->repository->userInfos()->create($result);
         }
-        $this->release();
     }
 }

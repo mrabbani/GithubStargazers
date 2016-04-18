@@ -3,7 +3,7 @@
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateGithubUserInfosTable extends Migration
+class CreateStargazerRepositoriesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -12,12 +12,10 @@ class CreateGithubUserInfosTable extends Migration
      */
     public function up()
     {
-        Schema::create('github_users', function (Blueprint $table) {
+        Schema::create('stargazer_repositories', function (Blueprint $table) {
             $table->increments('id');
-            $table->integer('user_id');
-            $table->integer('stargazer_repository_id');
-            $table->string('login');
-            $table->string('github_id');
+            $table->string('name');
+            $table->string('token');
             $table->timestamps();
         });
     }
@@ -29,6 +27,6 @@ class CreateGithubUserInfosTable extends Migration
      */
     public function down()
     {
-        Schema::drop('github_users');
+        Schema::drop('stargazer_repositories');
     }
 }

@@ -1,45 +1,31 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Laravel</title>
+@extends('layouts.app')
 
-        <link href="https://fonts.googleapis.com/css?family=Lato:100" rel="stylesheet" type="text/css">
-
-        <style>
-            html, body {
-                height: 100%;
-            }
-
-            body {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                display: table;
-                font-weight: 100;
-                font-family: 'Lato';
-            }
-
-            .container {
-                text-align: center;
-                display: table-cell;
-                vertical-align: middle;
-            }
-
-            .content {
-                text-align: center;
-                display: inline-block;
-            }
-
-            .title {
-                font-size: 96px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="content">
-                <div class="title">Laravel 5</div>
-            </div>
-        </div>
-    </body>
-</html>
+@section('content')
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<h1><a href="{{url('add-repo')}}">Add New Repository</a></h1>
+				@if(count($repositories))
+					<table class="table table-bordered">
+						<thead>
+							<th>Repository name</th>
+							<th>Action</th>
+						</thead>
+						<tbody>
+						@foreach($repositories as $repository)
+							<tr>
+								<td>{{$repository->name}}</td>
+								<td>
+									<a href="{{url('user-name/' . $repository->id)}}">Collect User</a>;
+									<a href="{{url('user-info/' . $repository->id)}}">User Info</a>;
+									<a href="{{url('collect-email/' . $repository->id)}}">User Email</a>
+								</td>
+							</tr>
+						@endforeach
+						</tbody>
+					</table>
+				@endif
+			</div>
+		</div>
+	</div>
+@endsection

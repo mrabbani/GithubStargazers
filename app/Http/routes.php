@@ -11,23 +11,41 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', 'StargazerController@index');
+Route::get('add-repo', 'StargazerController@addRepo');
+Route::post('store-repo', 'StargazerController@storeRepo');
 
-Route::get('github', function() {
-    //
-    $client = new \GuzzleHttp\Client(['headers' => ['Authorization' => 'Basic bXJhYmJhbmk6d2VkZXZzMTIz']]);
 
-    $page = 70;
-    $totalUsers = 0;
-    while ($page < 74) {
-        $res = $client->request('GET', 'https://api.github.com/repos/WordPress/WordPress/stargazers?per_page=100&page=' . $page);
-        $result = json_decode($res->getBody()->getContents(), true);
-        \App\User::find(1)->githubUsers()->createMany($result);
-        $totalUsers += count($result);
-        $page++;
+Route::get('collect-email/{id}', function ($repository) {
+    $repository = \App\StargazerRepository::find($repository);
+    $gitUsers = \App\GithubUserInfo::where('stargazer_repository_id', $repository->id)
+        ->whereNull('email')
+        ->lists('login');
+    foreach ($gitUsers->chunk(10) as $users) {
+        dispatch(new \App\Jobs\EmailCollector($users));
     }
 
-    return $page;
+    return 'Email Collecting';
+});
+
+Route::get('user-info/{id}', function ($repository) {
+    $repository = \App\StargazerRepository::find($repository);
+
+    $gitUsers = \App\GithubUser::where('stargazer_repository_id', $repository->id)
+        ->take(4000)
+        ->lists('login');
+
+    foreach ($gitUsers->chunk(10) as $users) {
+        dispatch(new \App\Jobs\GithubUserInfoCollector($users, $repository));
+    }
+
+    return 'Information Collecting';
+});
+
+Route::get('user-name/{id}', function ($repository) {
+    //
+    $repository = \App\StargazerRepository::find($repository);
+    dispatch(new \App\Jobs\StargazerCollector($repository->name, $repository->token));
+
+    return 'User name Working';
 });
